@@ -58,6 +58,7 @@ struct Messages {
 }
 
 #[derive(Debug, Deserialize)]
+#[allow(non_snake_case)]
 struct Message {
     srcUaAddress: String,
     dstUaAddress: String,
