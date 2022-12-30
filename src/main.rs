@@ -2,6 +2,9 @@ use clap::Parser;
 use reqwest::Client;
 use serde::Deserialize;
 
+#[macro_use] extern crate prettytable;
+use prettytable::{Table, Row, Cell, Attr, color};
+
 #[tokio::main]
 async fn main() -> Result<(), reqwest::Error> {
     let args: TransactionHashCli = TransactionHashCli::parse();
@@ -23,12 +26,65 @@ async fn main() -> Result<(), reqwest::Error> {
     }.to_owned() + "/tx/" + args.tx_hash.as_str();
     let response = client.get(url).send().await?;
 
-    // println!("{:?}", &response.text().await?);
-
     // Parse the response
     let data = response.json::<Messages>().await?;
 
-    println!("{:?}", data);
+    // Initialize table
+    let mut table = Table::new();
+    if args.verbose {
+        println!("Verbose table placeholder!");
+        table.add_row(row![ 
+            b->"Status", 
+            b->"SrcChainId", b->"SrcUaNonce", b->"SrcUaAddress",  b->"SrcBlockHash", b->"SrcBlockNumber", 
+            b->"DstChainId", b->"DstUaAddress", b->"DstTx" 
+        ]);
+    }
+    else {
+        table.add_row(row![ b->"Status", b->"DstChainId", b->"SrcUaNonce" ]);
+    }
+
+    // Format & print
+    data.messages.iter().for_each(|m| {
+        let status_color = match m.status.as_str() {
+            "INFLIGHT" => color::YELLOW,
+            "SUCCESS" => color::GREEN,
+            "STORED" => color::RED,
+            _ => color::WHITE
+        };
+
+        if args.verbose {
+            let dst_tx = if m.dstTxHash.is_some() {
+                m.dstTxHash.clone().unwrap()
+            } else if m.dstTxError.is_some() {
+                String::from("Error!")
+            }
+            else {
+                String::from("")
+            };
+
+            table.add_row(Row::new(vec![
+                Cell::new(m.status.as_str()).with_style(Attr::ForegroundColor(status_color)),
+
+                Cell::new(m.srcChainId.to_string().as_str()),
+                Cell::new(m.srcUaNonce.to_string().as_str()),
+                Cell::new(m.srcUaAddress.as_str()),
+                Cell::new(m.srcBlockHash.as_str()),
+                Cell::new(m.srcBlockNumber.as_str()),
+
+                Cell::new(m.dstChainId.to_string().as_str()),
+                Cell::new(m.dstUaAddress.as_str()),
+                Cell::new(dst_tx.as_str())
+            ]));        
+        }
+        else {
+            table.add_row(Row::new(vec![
+                Cell::new(m.status.as_str()).with_style(Attr::ForegroundColor(status_color)),
+                Cell::new(m.dstChainId.to_string().as_str()),
+                Cell::new(m.srcUaNonce.to_string().as_str())
+            ]));
+        }
+    });
+    table.printstd();
 
     Ok(())
 }
@@ -50,6 +106,10 @@ struct TransactionHashCli {
 
     /// The network type on which the transaction was on
     network: String,
+
+    /// Whether or not to show all of the information for each cross-chain message
+    #[arg(short, long, default_value_t = false)]
+    verbose: bool
 }
 
 #[derive(Debug, Deserialize)]
