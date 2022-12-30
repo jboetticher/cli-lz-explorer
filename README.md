@@ -19,3 +19,8 @@ Options:
   -h, --help     Print help information
   -V, --version  Print version information
 ```
+
+## Add Executable to PATH
+https://apple.stackexchange.com/a/41586  
+https://wpbeaches.com/make-an-alias-in-bash-or-zsh-shell-in-macos-with-terminal/
+
