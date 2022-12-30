@@ -1,6 +1,7 @@
 use clap::Parser;
 use reqwest::Client;
 use serde::Deserialize;
+use unicode_truncate::UnicodeTruncateStr;
 
 #[macro_use] extern crate prettytable;
 use prettytable::{Table, Row, Cell, Attr, color};
@@ -31,7 +32,7 @@ async fn main() -> Result<(), reqwest::Error> {
 
     // Initialize table
     let mut table = Table::new();
-    if args.verbose {
+    if args.verbose || args.all {
         println!("Verbose table placeholder!");
         table.add_row(row![ 
             b->"Status", 
@@ -52,9 +53,9 @@ async fn main() -> Result<(), reqwest::Error> {
             _ => color::WHITE
         };
 
-        if args.verbose {
+        if args.verbose || args.all {
             let dst_tx = if m.dstTxHash.is_some() {
-                m.dstTxHash.clone().unwrap()
+                m.dstTxHash.clone().unwrap_or_default()
             } else if m.dstTxError.is_some() {
                 String::from("Error!")
             }
@@ -67,12 +68,12 @@ async fn main() -> Result<(), reqwest::Error> {
 
                 Cell::new(m.srcChainId.to_string().as_str()),
                 Cell::new(m.srcUaNonce.to_string().as_str()),
-                Cell::new(m.srcUaAddress.as_str()),
-                Cell::new(m.srcBlockHash.as_str()),
+                Cell::new(ez_truncate(&m.srcUaAddress, &args.verbose).as_str()),
+                Cell::new(ez_truncate(&m.srcBlockHash, &args.verbose).as_str()),
                 Cell::new(m.srcBlockNumber.as_str()),
 
                 Cell::new(m.dstChainId.to_string().as_str()),
-                Cell::new(m.dstUaAddress.as_str()),
+                Cell::new(ez_truncate(&m.dstUaAddress, &args.verbose).as_str()),
                 Cell::new(dst_tx.as_str())
             ]));        
         }
@@ -87,6 +88,14 @@ async fn main() -> Result<(), reqwest::Error> {
     table.printstd();
 
     Ok(())
+}
+
+fn ez_truncate(s: &String, long: &bool) -> String {
+    if *long {
+        return s.clone()
+    } 
+    
+    s.as_str().unicode_truncate(10).0.to_owned() + "..."
 }
 
 #[derive(Debug)]
@@ -109,6 +118,10 @@ struct TransactionHashCli {
 
     /// Whether or not to show all of the information for each cross-chain message
     #[arg(short, long, default_value_t = false)]
+    all: bool,
+
+    /// Whether or not to show all of the information without shortening for each cross-chain message
+    #[arg(short, long, default_value_t = false)]
     verbose: bool
 }
 
@@ -126,7 +139,7 @@ struct Message {
     dstChainId: u32,
     dstTxHash: Option<String>,
     dstTxError: Option<String>,
-    srcTxHash: String,
+    // srcTxHash: String, // Not very helpful since you need this value to query
     srcBlockHash: String,
     srcBlockNumber: String,
     srcUaNonce: u128,

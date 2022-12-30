@@ -8,7 +8,7 @@ authors = ["Jeremy Boetticher <jeremy.boetticher@purestake.com>"]
 [dependencies]
 clap = { version = "4.0.32", features = ["derive"] }
 clap_mangen = "0.2.6"
-owo-colors = "3.5.0"
+unicode-truncate = "0.2.0"
 prettytable-rs = "0.10.0"
 serde = { version = "1.0.151", features = ["derive"] }
 tokio = { version = "1", features = ["full"] }
