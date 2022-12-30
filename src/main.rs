@@ -33,7 +33,6 @@ async fn main() -> Result<(), reqwest::Error> {
     // Initialize table
     let mut table = Table::new();
     if args.verbose || args.all {
-        println!("Verbose table placeholder!");
         table.add_row(row![ 
             b->"Status", 
             b->"SrcChainId", b->"SrcUaNonce", b->"SrcUaAddress",  b->"SrcBlockHash", b->"SrcBlockNumber", 
