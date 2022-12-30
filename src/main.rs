@@ -1,3 +1,7 @@
+use std::env::args;
+
 fn main() {
-    println!("Hello, world!");
+    let txHash = args().nth(1).expect("No transaction hash given!");
+
+    println!("{:?}", txHash);
 }
