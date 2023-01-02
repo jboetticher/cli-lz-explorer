@@ -47,12 +47,13 @@ async fn main() -> Result<(), reqwest::Error> {
     data.messages.iter().for_each(|m| {
         let status_color = match m.status.as_str() {
             "INFLIGHT" => color::YELLOW,
-            "SUCCESS" => color::GREEN,
+            "SUCCESS" | "DELIVERED" => color::GREEN,
             "STORED" => color::RED,
             _ => color::WHITE
         };
 
         if args.verbose || args.all {
+            println!("{:?}", m.dstTxHash);
             let dst_tx = if m.dstTxHash.is_some() {
                 m.dstTxHash.clone().unwrap_or_default()
             } else if m.dstTxError.is_some() {
